@@ -21,7 +21,7 @@
     Built to support GSA 6.14
     -->
 
-    <!-- Change value to determine if the dynamic navigation wil be output -->
+    <!-- Change value to determine if the dynamic navigation will be output -->
     <xsl:variable name="dynamicNavigation" select="true()"/>
 
     <xsl:template match="/">
@@ -157,6 +157,9 @@
                 <xsl:with-param name="orig_string" select="local-name()"/>
             </xsl:call-template>
             <xsl:text>:{</xsl:text><xsl:text>&#xa;</xsl:text>
+
+            <!-- Output each attribute -->
+
             <xsl:for-each select="@*">
                 <xsl:call-template name="jsonFormat"/>
                 <xsl:call-template name="stripTagsEscapeCharacters">
@@ -328,8 +331,6 @@
         <xsl:call-template name="escape-string">
             <xsl:with-param name="s" select="$reformatted_4"/>
         </xsl:call-template>
-
-        <!--<xsl:value-of disable-output-escaping='yes' select="$reformatted_4"/>-->
 
     </xsl:template>
 
