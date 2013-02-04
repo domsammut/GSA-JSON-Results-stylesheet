@@ -21,6 +21,9 @@
     Built to support GSA 6.14
     -->
 
+    <!-- Change value to determine if the dynamic navigation wil be output -->
+    <xsl:variable name="dynamicNavigation" select="true()"/>
+
     <xsl:template match="/">
         <xsl:apply-templates />
     </xsl:template>
@@ -48,7 +51,7 @@
         <xsl:text>}</xsl:text>
     </xsl:template>
 
-    <xsl:template match="TM | Q | GL | GD">
+    <xsl:template match="TM | Q | GL | GD ">
         <xsl:if test="child::node()">
             <xsl:call-template name="jsonFormat"/>
             <xsl:call-template name="stripTagsEscapeCharacters">
@@ -91,14 +94,13 @@
     </xsl:template>
 
     <!-- Match elements that might contain attributes -->
-    <xsl:template match="RES | R | GM | NB | HAS | C | MT">
+    <xsl:template match="RES | R | GM | NB | HAS | C | MT | PARM">
         <xsl:call-template name="jsonFormat"/>
         <xsl:call-template name="stripTagsEscapeCharacters">
             <xsl:with-param name="orig_string" select="local-name()"/>
         </xsl:call-template>
-        <xsl:text>:{</xsl:text>
+        <xsl:text>:{</xsl:text><xsl:text>&#xa;</xsl:text>
         <xsl:for-each select="@*">
-            <xsl:text>&#xa;</xsl:text>
             <xsl:call-template name="jsonFormat"/>
             <xsl:call-template name="stripTagsEscapeCharacters">
                 <xsl:with-param name="orig_string" select="local-name()"/>
@@ -107,26 +109,31 @@
             <xsl:call-template name="stripTagsEscapeCharacters">
                 <xsl:with-param name="orig_string" select="."/>
             </xsl:call-template>
-            <xsl:if test="position() != last()">,</xsl:if>
+            <xsl:if test="position() != last()">,<xsl:text>&#xa;</xsl:text></xsl:if>
         </xsl:for-each>
         <xsl:if test="count(@*) &gt; 0 and child::node()">,&#xa;</xsl:if>
 
-        <!-- If we have 0 or 1 attributes, create a new line-->
-        <!--<xsl:if test="count(@*) &lt;= 2">-->
-            <!--<xsl:text>&#xa;</xsl:text>-->
-        <!--</xsl:if>-->
         <xsl:apply-templates />
         <xsl:text>&#xa;</xsl:text>
         <xsl:call-template name="jsonFormat"/>
         <xsl:text>}</xsl:text>
-        <xsl:if test="(count(./following-sibling::*) &gt; 1)">
-            <xsl:text>,</xsl:text>
-        </xsl:if>
+        <xsl:choose>
+            <xsl:when test="$dynamicNavigation = true()">
+                <xsl:if test="(count(./following-sibling::*) &gt; 0) and (name(./following-sibling::*[1]) != 'SECURITY_TOKEN')">
+                    <xsl:text>,</xsl:text>
+                </xsl:if>
+            </xsl:when>
+            <xsl:otherwise>
+                <xsl:if test="(count(./following-sibling::*) &gt; 1)">
+                    <xsl:text>,</xsl:text>
+                </xsl:if>
+            </xsl:otherwise>
+        </xsl:choose>
         <xsl:text>&#xa;</xsl:text>
     </xsl:template>
 
     <!-- Match elements that don't contain attributes -->
-    <xsl:template match="M | FI | U | UE | T | RK | S | LANG | L | NU | RK">
+    <xsl:template match="M | FI | U | UE | T | RK | S | LANG | L | HN | NU | RK | PC ">
 
         <xsl:call-template name="jsonFormat"/>
         <xsl:call-template name="stripTagsEscapeCharacters">
@@ -139,6 +146,40 @@
         <xsl:if test="./following-sibling::*">
             <xsl:text>,</xsl:text>
             <xsl:text>&#xa;</xsl:text>
+        </xsl:if>
+    </xsl:template>
+
+    <!-- Dynamic Navigation -->
+    <xsl:template match="PV | PMT">
+        <xsl:if test="$dynamicNavigation = true()">
+            <xsl:call-template name="jsonFormat"/>
+            <xsl:call-template name="stripTagsEscapeCharacters">
+                <xsl:with-param name="orig_string" select="local-name()"/>
+            </xsl:call-template>
+            <xsl:text>:{</xsl:text><xsl:text>&#xa;</xsl:text>
+            <xsl:for-each select="@*">
+                <xsl:call-template name="jsonFormat"/>
+                <xsl:call-template name="stripTagsEscapeCharacters">
+                    <xsl:with-param name="orig_string" select="local-name()"/>
+                </xsl:call-template>
+                <xsl:text>:</xsl:text>
+                <xsl:call-template name="stripTagsEscapeCharacters">
+                    <xsl:with-param name="orig_string" select="."/>
+                </xsl:call-template>
+                <xsl:if test="position() != last()">
+                    <xsl:text>,</xsl:text>
+                </xsl:if>
+                <xsl:text>&#xa;</xsl:text>
+            </xsl:for-each>
+
+            <xsl:if test="count(@*) &gt; 0 and child::node()">,&#xa;</xsl:if>
+
+            <xsl:apply-templates />
+            <xsl:call-template name="jsonFormat"/>
+            <xsl:text>}</xsl:text>
+            <xsl:if test="(count(./following-sibling::*) &gt;= 1)">
+                <xsl:text>,</xsl:text>
+            </xsl:if>
         </xsl:if>
     </xsl:template>
 
